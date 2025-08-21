@@ -1,0 +1,157 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Elavon Test API",
+    "version": "1.0.0",
+    "description": "Test OpenAPI specification for Elavon integration tests"
+  },
+  "servers": [
+    {
+      "url": "https://api.sandbox.elavon.com"
+    }
+  ],
+  "paths": {
+    "/transactions": {
+      "post": {
+        "operationId": "processPayment",
+        "summary": "Process a payment transaction",
+        "tags": ["Transactions"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment processed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transactions/{transactionId}": {
+      "get": {
+        "operationId": "getTransaction",
+        "summary": "Get transaction details",
+        "tags": ["Transactions"],
+        "parameters": [
+          {
+            "name": "transactionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PaymentRequest": {
+        "type": "object",
+        "required": ["total", "card"],
+        "properties": {
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          },
+          "card": {
+            "$ref": "#/components/schemas/Card"
+          }
+        }
+      },
+      "PaymentResponse": {
+        "type": "object",
+        "properties": {
+          "transactionId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["APPROVED", "DECLINED", "PENDING"]
+          },
+          "authorizationCode": {
+            "type": "string"
+          }
+        }
+      },
+      "TransactionDetails": {
+        "type": "object",
+        "properties": {
+          "transactionId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Total": {
+        "type": "object",
+        "required": ["amount", "currencyCode"],
+        "properties": {
+          "amount": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]{2}$"
+          },
+          "currencyCode": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          }
+        }
+      },
+      "Card": {
+        "type": "object",
+        "required": ["number", "expirationMonth", "expirationYear"],
+        "properties": {
+          "number": {
+            "type": "string"
+          },
+          "expirationMonth": {
+            "type": "string",
+            "pattern": "^(0[1-9]|1[0-2])$"
+          },
+          "expirationYear": {
+            "type": "string",
+            "pattern": "^20[0-9]{2}$"
+          },
+          "cvv": {
+            "type": "string",
+            "pattern": "^[0-9]{3,4}$"
+          }
+        }
+      }
+    }
+  }
+}

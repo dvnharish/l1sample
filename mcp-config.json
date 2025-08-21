@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "elavon-codegen": {
+      "command": "java",
+      "args": [
+        "-jar",
+        "modelcontextprotocol/target/modelcontextprotocol-1.0.0-SNAPSHOT.jar",
+        "--stdio"
+      ],
+      "cwd": "D:/converge-elavon",
+      "env": {
+        "ELAVON_BASE_URL": "https://api.sandbox.elavon.com",
+        "ELAVON_API_KEY": "your-api-key",
+        "LOGGING_LEVEL_COM_ELAVON_CODEGEN": "INFO"
+      }
+    }
+  }
+}
+

@@ -1,0 +1,131 @@
+spring:
+  application:
+    name: elavon-codegen-mcp
+  
+  # MCP Server Configuration
+  mcp:
+    server:
+      enabled: true
+      name: "ElavonCodegenMCP"
+      version: "1.0.0"
+      description: "MCP server for Elavon API code generation and migration"
+      tools:
+        - name: "elavonCodegen"
+          description: |
+            Generate code for Elavon Payment Gateway APIs.
+            Modes: 
+            - upgrade: migrate Converge XML to Elavon JSON
+            - create: scaffold new Elavon JSON APIs only
+          schema:
+            type: object
+            required:
+              - mode
+            properties:
+              mode:
+                type: string
+                enum: ["upgrade", "create"]
+                description: "Generation mode"
+              scope:
+                type: string
+                enum: ["all", "tags", "operations"]
+                default: "all"
+                description: "Scope of generation"
+              tags:
+                type: array
+                items:
+                  type: string
+                description: "Tags to include (when scope=tags)"
+              operations:
+                type: array
+                items:
+                  type: string
+                description: "Operation IDs to include (when scope=operations)"
+              convergeSpecPath:
+                description: "Path to Converge OpenAPI spec (for UPGRADE mode)"
+                type: "string"
+                default: "classpath:specs/converge-openapi.json"
+              elavonSpecPath:
+                description: "Path to Elavon OpenAPI spec"
+                type: "string"
+                default: "classpath:specs/elavon-openapi.json"
+              projectRoot:
+                description: "Path to target project root directory"
+                type: "string"
+                default: "."
+              backupBranch:
+                type: string
+                default: "backup/converge-to-elavon"
+                description: "Git branch for backup (upgrade mode)"
+              dryRun:
+                type: boolean
+                default: false
+                description: "Preview changes without applying"
+
+# Elavon API Configuration
+elavon:
+  base-url: ${ELAVON_BASE_URL:https://api.elavon.com}
+  client:
+    timeout: ${ELAVON_CLIENT_TIMEOUT:PT30S}
+    max-retries: ${ELAVON_CLIENT_MAX_RETRIES:3}
+    retry-backoff: ${ELAVON_CLIENT_RETRY_BACKOFF:PT1S}
+  auth:
+    api-key: ${ELAVON_API_KEY:}
+    api-secret: ${ELAVON_API_SECRET:}
+    oauth:
+      enabled: ${ELAVON_OAUTH_ENABLED:false}
+      token-url: ${ELAVON_OAUTH_TOKEN_URL:https://auth.elavon.com/oauth/token}
+      client-id: ${ELAVON_OAUTH_CLIENT_ID:}
+      client-secret: ${ELAVON_OAUTH_CLIENT_SECRET:}
+      scope: ${ELAVON_OAUTH_SCOPE:payments}
+
+# Security Configuration
+security:
+  pci:
+    mask-sensitive-data: true
+    log-level: MASKED
+    sensitive-fields:
+      - cardNumber
+      - pan
+      - cvv
+      - cvv2
+      - securityCode
+      - accountNumber
+    
+# Observability
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    sampling:
+      probability: 1.0
+
+# Logging
+logging:
+  level:
+    com.elavon.codegen: DEBUG
+    org.springframework.web.reactive.function.client: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/elavon-codegen-mcp.log
+
+# Server Configuration
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# Code Generation Defaults
+codegen:
+  defaults:
+    currency-code: ${DEFAULT_CURRENCY_CODE:USD}
+    timezone: ${DEFAULT_TIMEZONE:America/New_York}
+    date-format: ${DEFAULT_DATE_FORMAT:yyyy-MM-dd}
+    datetime-format: ${DEFAULT_DATETIME_FORMAT:yyyy-MM-dd'T'HH:mm:ss.SSSXXX}

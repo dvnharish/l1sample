@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  elavon-mcp:
+    build: .
+    container_name: elavon-codegen-mcp
+    ports:
+      - "8080:8080"
+    environment:
+      - ELAVON_BASE_URL=https://api.sandbox.elavon.com
+      - ELAVON_API_KEY=${ELAVON_API_KEY:-your-api-key}
+      - SERVER_PORT=8080
+      - SPRING_PROFILES_ACTIVE=docker
+    volumes:
+      - ./specs:/app/specs:ro
+      - ./generated-output:/app/generated:rw
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - mcp-network
+
+  # Optional: Add a simple web UI for testing
+  mcp-ui:
+    image: nginx:alpine
+    container_name: mcp-ui
+    ports:
+      - "3000:80"
+    volumes:
+      - ./ui:/usr/share/nginx/html:ro
+    depends_on:
+      - elavon-mcp
+    networks:
+      - mcp-network
+
+networks:
+  mcp-network:
+    driver: bridge
+
+volumes:
+  generated-output:
+    driver: local
