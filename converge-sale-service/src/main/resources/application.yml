@@ -1,0 +1,17 @@
+server:
+  port: 8080
+
+converge:
+  base-url: ${CONVERGE_BASE_URL:https://api.convergepay.com/VirtualMerchant/process.do}
+  ssl-merchant-id: ${CONVERGE_MERCHANT_ID:demoAccountId}
+  ssl-user-id: ${CONVERGE_USER_ID:demoUser}
+  ssl-pin: ${CONVERGE_PIN:demoPin}
+  timeout-ms: ${CONVERGE_TIMEOUT_MS:10000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+
