@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import com.elavon.codegen.engine.config.CodegenConfig;
 
 /**
  * Base class for all code generators.
@@ -27,24 +28,27 @@ public abstract class BaseGenerator {
      * @param outputDir The output directory (usually src/main/java)
      * @return The path to the generated file
      */
-    protected String writeJavaFile(String packageName, TypeSpec typeSpec, String outputDir) {
+    protected String writeJavaFile(String packageName, TypeSpec typeSpec, String outputDir, boolean dryRun) {
         JavaFile javaFile = JavaFile.builder(packageName, typeSpec)
             .skipJavaLangImports(true)
             .indent("    ") // 4 spaces
             .build();
         
+        Path outputPath = Paths.get(outputDir);
+        String filePath = outputPath
+            .resolve(packageName.replace('.', File.separatorChar))
+            .resolve(typeSpec.name + ".java")
+            .toString();
+
+        if (dryRun) {
+            log.info("[Dry Run] Would generate: {}", filePath);
+            return filePath;
+        }
+
         try {
-            Path outputPath = Paths.get(outputDir);
             javaFile.writeTo(outputPath);
-            
-            String filePath = outputPath
-                .resolve(packageName.replace('.', File.separatorChar))
-                .resolve(typeSpec.name + ".java")
-                .toString();
-            
             log.debug("Generated: {}", filePath);
             return filePath;
-            
         } catch (IOException e) {
             throw new GeneratorException("Failed to write Java file: " + typeSpec.name, e);
         }
@@ -57,7 +61,11 @@ public abstract class BaseGenerator {
      * @param content The file content
      * @return The path to the generated file
      */
-    protected String writeRawFile(String filePath, String content) {
+    protected String writeRawFile(String filePath, String content, boolean dryRun) {
+        if (dryRun) {
+            log.info("[Dry Run] Would generate: {}", filePath);
+            return filePath;
+        }
         try {
             File file = new File(filePath);
             FileUtils.writeStringToFile(file, content, StandardCharsets.UTF_8);

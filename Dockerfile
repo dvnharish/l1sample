@@ -1,4 +1,9 @@
-FROM openjdk:17-jdk-slim
+FROM openjdk:21-jdk-slim
+
+# Set application user
+RUN addgroup --system --gid 1001 spring && \
+    adduser --system --uid 1001 --ingroup spring spring
+USER spring:spring
 
 # Install curl for health checks
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
@@ -14,7 +19,7 @@ COPY generated/pom.xml ./generated/
 COPY tests/pom.xml ./tests/
 
 # Copy source code
-COPY . .
+COPY . /app
 
 # Build the application (skip tests for now due to compilation issues)
 RUN ./mvnw clean package -DskipTests -q || true

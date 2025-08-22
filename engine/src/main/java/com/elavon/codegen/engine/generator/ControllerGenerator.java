@@ -20,6 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.RequestBody;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import java.util.Map;
+import com.elavon.codegen.engine.config.CodegenConfig;
 
 /**
  * Generates REST controller classes from OpenAPI specifications.
@@ -31,7 +36,7 @@ public class ControllerGenerator extends BaseGenerator {
     /**
      * Generate a controller class for a specific tag.
      */
-    public String generate(DetectedPackages packages, OpenAPI spec,
+    public String generate(CodegenConfig config, DetectedPackages packages, OpenAPI spec,
                           OperationManifest.OperationInfo operationInfo) {
         
         String tag = operationInfo.getTag();
@@ -47,7 +52,7 @@ public class ControllerGenerator extends BaseGenerator {
         TypeSpec controllerClass = generateControllerClass(packages, spec, 
             controllerClassName, tag, tagOperations);
         
-        return writeJavaFile(controllerPackage, controllerClass, getOutputDir());
+        return writeJavaFile(controllerPackage, controllerClass, getOutputDir(), config.isDryRun());
     }
     
     private List<OperationManifest.OperationInfo> collectOperationsForTag(
@@ -347,14 +352,64 @@ public class ControllerGenerator extends BaseGenerator {
     
     private TypeName determineRequestType(DetectedPackages packages, OpenAPI spec,
                                         Operation operation) {
-        // Simplified - would resolve actual schema types
-        return ClassName.get(Object.class);
+        if (operation.getRequestBody() == null) {
+            return ClassName.get(Void.class);
+        }
+        RequestBody requestBody = ((RequestBody) operation.getRequestBody());
+        if (requestBody.getContent() == null) {
+            return ClassName.get(Object.class);
+        }
+        io.swagger.v3.oas.models.media.MediaType mediaType = requestBody.getContent().values().iterator().next();
+        if (mediaType.getSchema() == null) {
+            return ClassName.get(Object.class);
+        }
+        return getSchemaTypeName(packages, spec, mediaType.getSchema(), "Request");
     }
     
     private TypeName determineResponseType(DetectedPackages packages, OpenAPI spec,
                                          Operation operation) {
-        // Simplified - would resolve actual schema types
+        if (operation.getResponses() == null) {
+            return ClassName.get(Void.class);
+        }
+        ApiResponse successResponse = operation.getResponses().get("200");
+        if (successResponse == null) {
+            successResponse = operation.getResponses().get("201");
+        }
+        if (successResponse == null) {
+            successResponse = operation.getResponses().get("default");
+        }
+        if (successResponse == null || successResponse.getContent() == null) {
+            return ClassName.get(Object.class);
+        }
+        io.swagger.v3.oas.models.media.MediaType mediaType = successResponse.getContent().values().iterator().next();
+        if (mediaType.getSchema() == null) {
+            return ClassName.get(Object.class);
+        }
+        return getSchemaTypeName(packages, spec, mediaType.getSchema(), "Response");
+    }
+
+    private TypeName getSchemaTypeName(DetectedPackages packages, OpenAPI spec,
+                                     Schema<?> schema, String suffix) {
+        if (schema.get$ref() != null) {
+            String schemaName = extractSchemaName(schema.get$ref());
+            return ClassName.bestGuess(toClassName(schemaName));
+        }
+        if (schema instanceof io.swagger.v3.oas.models.media.ArraySchema) {
+            io.swagger.v3.oas.models.media.ArraySchema arraySchema = (io.swagger.v3.oas.models.media.ArraySchema) schema;
+            TypeName itemType = getSchemaTypeName(packages, spec,
+                arraySchema.getItems(), suffix);
+            return ParameterizedTypeName.get(ClassName.get(List.class), itemType);
+        }
+        String title = schema.getTitle();
+        if (title != null) {
+            return ClassName.bestGuess(toClassName(title));
+        }
         return ClassName.get(Object.class);
+    }
+
+    private String extractSchemaName(String ref) {
+        String[] parts = ref.split("/");
+        return parts[parts.length - 1];
     }
     
     private boolean isStandardHeader(String headerName) {

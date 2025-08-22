@@ -8,7 +8,7 @@ echo "🚀 Building Elavon Codegen MCP Server..."
 
 # Check prerequisites
 if ! command -v java &> /dev/null; then
-    echo "❌ Java 17+ is required but not found"
+    echo "❌ Java 21+ is required but not found"
     exit 1
 fi
 
@@ -19,8 +19,8 @@ fi
 
 # Check Java version
 JAVA_VERSION=$(java -version 2>&1 | head -n 1 | cut -d'"' -f2 | cut -d'.' -f1)
-if [ "$JAVA_VERSION" -lt 17 ]; then
-    echo "❌ Java 17+ is required, found Java $JAVA_VERSION"
+if [ "$JAVA_VERSION" -lt 21 ]; then
+    echo "❌ Java 21+ is required, found Java $JAVA_VERSION"
     exit 1
 fi
 

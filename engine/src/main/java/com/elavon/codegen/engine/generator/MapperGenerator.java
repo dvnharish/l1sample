@@ -15,6 +15,7 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import com.elavon.codegen.engine.config.CodegenConfig;
 
 /**
  * Generates MapStruct mappers for converting between Converge (XML) and Elavon (JSON) models.
@@ -27,7 +28,7 @@ public class MapperGenerator extends BaseGenerator {
      * Generate a mapper interface for a specific operation.
      * Used in upgrade mode to map between legacy and new models.
      */
-    public String generate(DetectedPackages packages, OpenAPI spec,
+    public String generate(CodegenConfig config, DetectedPackages packages, OpenAPI spec,
                           OperationManifest.OperationInfo operationInfo) {
         
         String tag = operationInfo.getTag();
@@ -40,7 +41,7 @@ public class MapperGenerator extends BaseGenerator {
         TypeSpec mapperInterface = generateMapperInterface(packages, spec, 
             mapperClassName, operationInfo);
         
-        return writeJavaFile(mapperPackage, mapperInterface, getOutputDir());
+        return writeJavaFile(mapperPackage, mapperInterface, getOutputDir(), config.isDryRun());
     }
     
     private TypeSpec generateMapperInterface(DetectedPackages packages, OpenAPI spec,
@@ -180,7 +181,7 @@ public class MapperGenerator extends BaseGenerator {
     private void addAmountMappingMethods(TypeSpec.Builder interfaceBuilder) {
         // Format amount from cents to decimal string
         MethodSpec formatAmount = MethodSpec.methodBuilder("formatAmount")
-            .addModifiers(Modifier.DEFAULT)
+            .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
             .addAnnotation(Named.class)
             .addParameter(Long.class, "amountInCents")
             .returns(String.class)
@@ -193,7 +194,7 @@ public class MapperGenerator extends BaseGenerator {
         
         // Parse amount from decimal string to cents
         MethodSpec parseAmount = MethodSpec.methodBuilder("parseAmount")
-            .addModifiers(Modifier.DEFAULT)
+            .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
             .addAnnotation(Named.class)
             .addParameter(String.class, "amountStr")
             .returns(Long.class)
@@ -208,7 +209,7 @@ public class MapperGenerator extends BaseGenerator {
     private void addDateMappingMethods(TypeSpec.Builder interfaceBuilder) {
         // Extract month from MMYY
         MethodSpec extractMonth = MethodSpec.methodBuilder("extractExpiryMonth")
-            .addModifiers(Modifier.DEFAULT)
+            .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
             .addAnnotation(Named.class)
             .addParameter(String.class, "expiry")
             .returns(String.class)
@@ -220,7 +221,7 @@ public class MapperGenerator extends BaseGenerator {
         
         // Extract year from MMYY
         MethodSpec extractYear = MethodSpec.methodBuilder("extractExpiryYear")
-            .addModifiers(Modifier.DEFAULT)
+            .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
             .addAnnotation(Named.class)
             .addParameter(String.class, "expiry")
             .returns(String.class)
@@ -232,7 +233,7 @@ public class MapperGenerator extends BaseGenerator {
         
         // Format timestamp
         MethodSpec formatTimestamp = MethodSpec.methodBuilder("formatTimestamp")
-            .addModifiers(Modifier.DEFAULT)
+            .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
             .addAnnotation(Named.class)
             .addParameter(OffsetDateTime.class, "dateTime")
             .returns(String.class)
@@ -247,7 +248,7 @@ public class MapperGenerator extends BaseGenerator {
     private void addCardMappingMethods(TypeSpec.Builder interfaceBuilder) {
         // Mask card number (PCI compliance)
         MethodSpec maskCard = MethodSpec.methodBuilder("maskCardNumber")
-            .addModifiers(Modifier.DEFAULT)
+            .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
             .addAnnotation(Named.class)
             .addParameter(String.class, "cardNumber")
             .returns(String.class)
@@ -261,7 +262,7 @@ public class MapperGenerator extends BaseGenerator {
         
         // Get last 4 digits
         MethodSpec getLast4 = MethodSpec.methodBuilder("getLastFourDigits")
-            .addModifiers(Modifier.DEFAULT)
+            .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
             .addAnnotation(Named.class)
             .addParameter(String.class, "cardNumber")
             .returns(String.class)
@@ -275,7 +276,7 @@ public class MapperGenerator extends BaseGenerator {
     private void addStatusMappingMethods(TypeSpec.Builder interfaceBuilder) {
         // Map Elavon status to Converge result
         MethodSpec mapStatus = MethodSpec.methodBuilder("mapStatusToResult")
-            .addModifiers(Modifier.DEFAULT)
+            .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
             .addAnnotation(Named.class)
             .addParameter(String.class, "status")
             .returns(String.class)
@@ -293,7 +294,7 @@ public class MapperGenerator extends BaseGenerator {
         
         // Map Converge result to Elavon status
         MethodSpec mapResult = MethodSpec.methodBuilder("mapResultToStatus")
-            .addModifiers(Modifier.DEFAULT)
+            .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
             .addAnnotation(Named.class)
             .addParameter(String.class, "result")
             .returns(String.class)

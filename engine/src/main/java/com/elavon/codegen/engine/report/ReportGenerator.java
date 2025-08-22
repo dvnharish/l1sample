@@ -41,6 +41,10 @@ public class ReportGenerator {
      * @return Path to the generated report
      */
     public String generateReport(CodegenConfig config, CodegenResult result) {
+        if (config.isDryRun()) {
+            log.info("[Dry Run] Skipping report generation");
+            return "dry-run-report.md";
+        }
         String timestamp = LocalDateTime.now()
             .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
         

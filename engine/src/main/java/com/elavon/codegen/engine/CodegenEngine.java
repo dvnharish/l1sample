@@ -173,25 +173,25 @@ public class CodegenEngine {
         for (OperationManifest.OperationInfo operation : operations) {
             try {
                 // Generate DTOs
-                List<String> dtoFiles = dtoGenerator.generate(packages, spec, operation);
-                dtoFiles.forEach(result::addCreatedFile);
+                List<String> dtoFiles = dtoGenerator.generate(config, packages, spec, operation);
+                if (!config.isDryRun()) dtoFiles.forEach(result::addCreatedFile);
                 
                 // Generate Client
-                String clientFile = clientGenerator.generate(packages, spec, operation);
-                result.addCreatedFile(clientFile);
+                String clientFile = clientGenerator.generate(config, packages, spec, operation);
+                if (!config.isDryRun()) result.addCreatedFile(clientFile);
                 
                 // Generate Service
-                String serviceFile = serviceGenerator.generate(packages, spec, operation);
-                result.addCreatedFile(serviceFile);
+                String serviceFile = serviceGenerator.generate(config, packages, spec, operation);
+                if (!config.isDryRun()) result.addCreatedFile(serviceFile);
                 
                 // Generate Controller
-                String controllerFile = controllerGenerator.generate(packages, spec, operation);
-                result.addCreatedFile(controllerFile);
+                String controllerFile = controllerGenerator.generate(config, packages, spec, operation);
+                if (!config.isDryRun()) result.addCreatedFile(controllerFile);
                 
                 // Generate Mapper (for upgrade mode)
                 if (config.isUpgradeMode()) {
-                    String mapperFile = mapperGenerator.generate(packages, spec, operation);
-                    result.addCreatedFile(mapperFile);
+                    String mapperFile = mapperGenerator.generate(config, packages, spec, operation);
+                    if (!config.isDryRun()) result.addCreatedFile(mapperFile);
                 }
                 
                 result.addOperationMapping(null, operation.getOperationId(), operation.getTag());

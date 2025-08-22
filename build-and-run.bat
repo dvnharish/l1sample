@@ -6,7 +6,7 @@ echo 🚀 Building Elavon Codegen MCP Server...
 REM Check prerequisites
 where java >nul 2>nul
 if %errorlevel% neq 0 (
-    echo ❌ Java 17+ is required but not found
+    echo ❌ Java 21+ is required but not found
     pause
     exit /b 1
 )

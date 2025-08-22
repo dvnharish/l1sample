@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Java 17 or higher
+- Java 21 or higher
 - Maven 3.8+
 - OpenAPI specifications in `./specs/` directory
 - Spring Boot project structure for target projects
@@ -37,7 +37,7 @@ java -jar modelcontextprotocol/target/modelcontextprotocol-1.0.0-SNAPSHOT.jar \
 
 ### Create Dockerfile
 ```dockerfile
-FROM openjdk:17-jdk-slim
+FROM openjdk:21-jdk-slim
 
 # Copy source code
 COPY . /app
@@ -453,7 +453,7 @@ jobs:
     - name: Setup Java
       uses: actions/setup-java@v2
       with:
-        java-version: '17'
+        java-version: '21'
     - name: Build
       run: mvn clean package -DskipTests
     - name: Build Docker

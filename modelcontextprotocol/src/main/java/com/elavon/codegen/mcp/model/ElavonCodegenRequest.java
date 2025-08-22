@@ -3,6 +3,8 @@ package com.elavon.codegen.mcp.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,7 +14,9 @@ import java.util.List;
  * Request model for the Elavon codegen MCP tool.
  */
 @Data
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class ElavonCodegenRequest {
     
     @NotNull
@@ -22,6 +26,7 @@ public class ElavonCodegenRequest {
     
     @Pattern(regexp = "all|tags|operations")
     @JsonProperty("scope")
+    @Builder.Default
     private String scope = "all";
     
     @JsonProperty("tags")
@@ -40,9 +45,11 @@ public class ElavonCodegenRequest {
     private String projectRoot = ".";
     
     @JsonProperty("backupBranch")
+    @Builder.Default
     private String backupBranch = "backup/converge-to-elavon";
     
     @JsonProperty("dryRun")
+    @Builder.Default
     private boolean dryRun = false;
     
     /**

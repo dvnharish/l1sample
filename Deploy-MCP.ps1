@@ -19,7 +19,7 @@ function Test-Prerequisites {
     Write-Host "Checking prerequisites..." -ForegroundColor Yellow
     
     if (-not (Get-Command java -ErrorAction SilentlyContinue)) {
-        Write-Host "❌ Java 17+ is required but not found" -ForegroundColor Red
+        Write-Host "❌ Java 21+ is required but not found" -ForegroundColor Red
         return $false
     }
     

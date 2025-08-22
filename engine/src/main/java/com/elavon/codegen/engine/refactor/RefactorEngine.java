@@ -180,29 +180,29 @@ public class RefactorEngine {
         log.info("Refactoring file: {}", location.getFilePath());
         
         CompilationUnit cu = location.getCompilationUnit();
-        boolean modified = false;
+        final boolean[] modifiedRef = {false};
         
         // Update imports
         if (updateImports(cu, packages)) {
-            modified = true;
+            modifiedRef[0] = true;
         }
         
         // Update class annotations
         cu.findAll(ClassOrInterfaceDeclaration.class).forEach(classDecl -> {
             if (updateClassAnnotations(classDecl)) {
-                modified = true;
+                modifiedRef[0] = true;
             }
         });
         
         // Update methods
         cu.findAll(MethodDeclaration.class).forEach(method -> {
             if (refactorMethod(method, packages, targetOperations)) {
-                modified = true;
+                modifiedRef[0] = true;
             }
         });
         
         // Save the modified file
-        if (modified) {
+        if (modifiedRef[0]) {
             String modifiedContent = cu.toString();
             FileUtils.writeStringToFile(
                 new File(location.getFilePath()), 
@@ -212,7 +212,7 @@ public class RefactorEngine {
             log.info("Saved refactored file: {}", location.getFilePath());
         }
         
-        return modified;
+        return modifiedRef[0];
     }
     
     private boolean updateImports(CompilationUnit cu, DetectedPackages packages) {
@@ -240,7 +240,7 @@ public class RefactorEngine {
     }
     
     private boolean updateClassAnnotations(ClassOrInterfaceDeclaration classDecl) {
-        boolean modified = false;
+        final boolean[] modifiedRef = {false};
         
         // Update RequestMapping to use JSON
         classDecl.getAnnotations().forEach(annotation -> {
@@ -250,13 +250,13 @@ public class RefactorEngine {
                         pair.getNameAsString().equals("produces")) {
                         // Change to JSON
                         pair.setValue(new StringLiteralExpr("application/json"));
-                        modified = true;
+                        modifiedRef[0] = true;
                     }
                 });
             }
         });
         
-        return modified;
+        return modifiedRef[0];
     }
     
     private boolean refactorMethod(MethodDeclaration method,

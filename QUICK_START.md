@@ -257,7 +257,7 @@ curl http://localhost:8080/actuator/info
    - Ensure target directory is writable
 
 4. **Build Issues**
-   - Check Java version: `java -version` (requires 17+)
+   - Check Java version: `java -version` (requires 21+)
    - Clean rebuild: `mvn clean compile`
 
 ### Getting Help

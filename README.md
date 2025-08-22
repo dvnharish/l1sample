@@ -19,7 +19,7 @@ This MCP server provides intelligent code generation capabilities for:
 
 ## Prerequisites
 
-- Java 17 or higher
+- Java 21 or higher
 - Maven 3.8+
 - Spring Boot project structure
 - Local OpenAPI specifications:

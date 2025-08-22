@@ -29,6 +29,7 @@ import javax.lang.model.element.Modifier;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.elavon.codegen.engine.config.CodegenConfig;
 
 /**
  * Generates WebClient-based API clients from OpenAPI specifications.
@@ -41,7 +42,7 @@ public class ClientGenerator extends BaseGenerator {
      * Generate a WebClient for a specific tag.
      * Groups all operations with the same tag into one client class.
      */
-    public String generate(DetectedPackages packages, OpenAPI spec,
+    public String generate(CodegenConfig config, DetectedPackages packages, OpenAPI spec,
                           OperationManifest.OperationInfo operationInfo) {
         
         String tag = operationInfo.getTag();
@@ -57,7 +58,7 @@ public class ClientGenerator extends BaseGenerator {
         TypeSpec clientClass = generateClientClass(packages, spec, clientClassName, 
             tag, tagOperations);
         
-        return writeJavaFile(clientPackage, clientClass, getOutputDir());
+        return writeJavaFile(clientPackage, clientClass, getOutputDir(), config.isDryRun());
     }
     
     private List<OperationManifest.OperationInfo> collectOperationsForTag(
@@ -262,8 +263,8 @@ public class ClientGenerator extends BaseGenerator {
         String path = operationInfo.getPath();
         String httpMethod = operationInfo.getMethod().toUpperCase();
         
-        methodBuilder.addStatement("$T.info($S, $S)", 
-            ClassName.get("log"), "Calling " + operationInfo.getOperationId(), path);
+        methodBuilder.addStatement("log.info($S, $S)", 
+            "Calling " + operationInfo.getOperationId(), path);
         
         // Build URI
         methodBuilder.addCode("\n");
@@ -344,7 +345,7 @@ public class ClientGenerator extends BaseGenerator {
     private MethodSpec generateErrorHandler() {
         return MethodSpec.methodBuilder("handleError")
             .addModifiers(Modifier.PRIVATE)
-            .returns(ParameterizedTypeName.get(Mono.class, WildcardTypeName.subtypeOf(Throwable.class)))
+            .returns(ParameterizedTypeName.get(ClassName.get(Mono.class), WildcardTypeName.subtypeOf(ClassName.get(Throwable.class))))
             .addParameter(ClassName.get("org.springframework.web.reactive.function.client", 
                 "ClientResponse"), "response")
             .addStatement("return response.bodyToMono($T.class)", String.class)
@@ -425,7 +426,7 @@ public class ClientGenerator extends BaseGenerator {
                                      Schema<?> schema, String suffix) {
         if (schema.get$ref() != null) {
             String schemaName = extractSchemaName(schema.get$ref());
-            return ClassName.bestGuess(schemaName);
+            return ClassName.bestGuess(toClassName(schemaName));
         }
         
         if (schema instanceof io.swagger.v3.oas.models.media.ArraySchema) {

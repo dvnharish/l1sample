@@ -14,6 +14,7 @@ import javax.lang.model.element.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.elavon.codegen.engine.config.CodegenConfig;
 
 /**
  * Generates service classes that orchestrate business logic and client calls.
@@ -25,7 +26,7 @@ public class ServiceGenerator extends BaseGenerator {
     /**
      * Generate a service class for a specific tag.
      */
-    public String generate(DetectedPackages packages, OpenAPI spec,
+    public String generate(CodegenConfig config, DetectedPackages packages, OpenAPI spec,
                           OperationManifest.OperationInfo operationInfo) {
         
         String tag = operationInfo.getTag();
@@ -41,7 +42,7 @@ public class ServiceGenerator extends BaseGenerator {
         TypeSpec serviceClass = generateServiceClass(packages, spec, serviceClassName, 
             tag, tagOperations);
         
-        return writeJavaFile(servicePackage, serviceClass, getOutputDir());
+        return writeJavaFile(servicePackage, serviceClass, getOutputDir(), config.isDryRun());
     }
     
     private List<OperationManifest.OperationInfo> collectOperationsForTag(

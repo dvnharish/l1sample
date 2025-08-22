@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.elavon.codegen.engine.config.CodegenConfig;
 
 /**
  * Generates DTO/POJO classes from OpenAPI schemas.
@@ -44,7 +45,7 @@ public class DtoGenerator extends BaseGenerator {
      * 
      * @return List of generated file paths
      */
-    public List<String> generate(DetectedPackages packages, OpenAPI spec, 
+    public List<String> generate(CodegenConfig config, DetectedPackages packages, OpenAPI spec, 
                                 OperationManifest.OperationInfo operationInfo) {
         List<String> generatedFiles = new ArrayList<>();
         Set<String> processedSchemas = new HashSet<>();
@@ -59,7 +60,7 @@ public class DtoGenerator extends BaseGenerator {
         // Process request body schemas
         if (operation.getRequestBody() != null) {
             List<String> requestFiles = processRequestBody(
-                packages, spec, operation.getRequestBody(), 
+                config, packages, spec, operation.getRequestBody(), 
                 basePackage, processedSchemas);
             generatedFiles.addAll(requestFiles);
         }
@@ -68,7 +69,7 @@ public class DtoGenerator extends BaseGenerator {
         if (operation.getResponses() != null) {
             operation.getResponses().forEach((statusCode, apiResponse) -> {
                 List<String> responseFiles = processResponse(
-                    packages, spec, apiResponse, statusCode,
+                    config, packages, spec, apiResponse, statusCode,
                     basePackage, processedSchemas);
                 generatedFiles.addAll(responseFiles);
             });
@@ -79,7 +80,7 @@ public class DtoGenerator extends BaseGenerator {
             for (Parameter parameter : operation.getParameters()) {
                 if (parameter.getSchema() != null) {
                     List<String> paramFiles = processSchema(
-                        packages, spec, parameter.getSchema(),
+                        config, packages, spec, parameter.getSchema(),
                         toClassName(parameter.getName()),
                         basePackage, processedSchemas);
                     generatedFiles.addAll(paramFiles);
@@ -90,7 +91,7 @@ public class DtoGenerator extends BaseGenerator {
         return generatedFiles;
     }
     
-    private List<String> processRequestBody(DetectedPackages packages, OpenAPI spec,
+    private List<String> processRequestBody(CodegenConfig config, DetectedPackages packages, OpenAPI spec,
                                           RequestBody requestBody, String basePackage,
                                           Set<String> processedSchemas) {
         List<String> files = new ArrayList<>();
@@ -102,7 +103,7 @@ public class DtoGenerator extends BaseGenerator {
         requestBody.getContent().forEach((mediaType, mediaTypeObj) -> {
             if (mediaTypeObj.getSchema() != null) {
                 String className = deriveClassName(mediaTypeObj.getSchema(), "Request");
-                files.addAll(processSchema(packages, spec, mediaTypeObj.getSchema(),
+                files.addAll(processSchema(config, packages, spec, mediaTypeObj.getSchema(),
                     className, basePackage, processedSchemas));
             }
         });
@@ -110,7 +111,7 @@ public class DtoGenerator extends BaseGenerator {
         return files;
     }
     
-    private List<String> processResponse(DetectedPackages packages, OpenAPI spec,
+    private List<String> processResponse(CodegenConfig config, DetectedPackages packages, OpenAPI spec,
                                        ApiResponse apiResponse, String statusCode,
                                        String basePackage, Set<String> processedSchemas) {
         List<String> files = new ArrayList<>();
@@ -123,7 +124,7 @@ public class DtoGenerator extends BaseGenerator {
             if (mediaTypeObj.getSchema() != null) {
                 String suffix = statusCode.startsWith("2") ? "Response" : "ErrorResponse";
                 String className = deriveClassName(mediaTypeObj.getSchema(), suffix);
-                files.addAll(processSchema(packages, spec, mediaTypeObj.getSchema(),
+                files.addAll(processSchema(config, packages, spec, mediaTypeObj.getSchema(),
                     className, basePackage, processedSchemas));
             }
         });
@@ -131,7 +132,7 @@ public class DtoGenerator extends BaseGenerator {
         return files;
     }
     
-    private List<String> processSchema(DetectedPackages packages, OpenAPI spec,
+    private List<String> processSchema(CodegenConfig config, DetectedPackages packages, OpenAPI spec,
                                      Schema<?> schema, String suggestedName,
                                      String basePackage, Set<String> processedSchemas) {
         List<String> files = new ArrayList<>();
@@ -146,7 +147,7 @@ public class DtoGenerator extends BaseGenerator {
                 
                 Schema<?> resolvedSchema = resolveSchema(spec, ref);
                 if (resolvedSchema != null) {
-                    files.addAll(processSchema(packages, spec, resolvedSchema,
+                    files.addAll(processSchema(config, packages, spec, resolvedSchema,
                         schemaName, basePackage, processedSchemas));
                 }
             }
@@ -157,7 +158,7 @@ public class DtoGenerator extends BaseGenerator {
         if (schema instanceof ArraySchema) {
             ArraySchema arraySchema = (ArraySchema) schema;
             if (arraySchema.getItems() != null) {
-                files.addAll(processSchema(packages, spec, arraySchema.getItems(),
+                files.addAll(processSchema(config, packages, spec, arraySchema.getItems(),
                     suggestedName + "Item", basePackage, processedSchemas));
             }
             return files;
@@ -166,7 +167,7 @@ public class DtoGenerator extends BaseGenerator {
         // Handle object schemas
         if ("object".equals(schema.getType()) || schema.getProperties() != null) {
             String className = deriveClassName(schema, suggestedName);
-            String filePath = generateObjectDto(packages, spec, schema, className,
+            String filePath = generateObjectDto(config, packages, spec, schema, className,
                 basePackage, processedSchemas);
             files.add(filePath);
             
@@ -174,7 +175,7 @@ public class DtoGenerator extends BaseGenerator {
             if (schema.getProperties() != null) {
                 schema.getProperties().forEach((propName, propSchema) -> {
                     if (needsSeparateClass(propSchema)) {
-                        files.addAll(processSchema(packages, spec, propSchema,
+                        files.addAll(processSchema(config, packages, spec, propSchema,
                             className + toClassName(propName),
                             basePackage, processedSchemas));
                     }
@@ -187,15 +188,16 @@ public class DtoGenerator extends BaseGenerator {
             ComposedSchema composedSchema = (ComposedSchema) schema;
             
             if (composedSchema.getAllOf() != null) {
-                for (Schema<?> subSchema : (java.util.List<Schema<?>>) composedSchema.getAllOf()) {
-                    files.addAll(processSchema(packages, spec, subSchema,
+                for (Object subSchemaObj : composedSchema.getAllOf()) {
+                    Schema<?> subSchema = (Schema<?>) subSchemaObj;
+                    files.addAll(processSchema(config, packages, spec, subSchema,
                         suggestedName, basePackage, processedSchemas));
                 }
             }
             
             if (composedSchema.getAnyOf() != null || composedSchema.getOneOf() != null) {
                 // Generate interface or base class for polymorphic types
-                String filePath = generatePolymorphicDto(packages, spec, composedSchema,
+                String filePath = generatePolymorphicDto(config, packages, spec, composedSchema,
                     suggestedName, basePackage, processedSchemas);
                 files.add(filePath);
             }
@@ -204,7 +206,7 @@ public class DtoGenerator extends BaseGenerator {
         return files;
     }
     
-    private String generateObjectDto(DetectedPackages packages, OpenAPI spec,
+    private String generateObjectDto(CodegenConfig config, DetectedPackages packages, OpenAPI spec,
                                    Schema<?> schema, String className,
                                    String packageName, Set<String> processedSchemas) {
         
@@ -247,7 +249,7 @@ public class DtoGenerator extends BaseGenerator {
         }
         
         TypeSpec typeSpec = classBuilder.build();
-        return writeJavaFile(packageName, typeSpec, getOutputDir());
+        return writeJavaFile(packageName, typeSpec, getOutputDir(), config.isDryRun());
     }
     
     private FieldSpec generateField(String propertyName, Schema<?> schema,
@@ -321,7 +323,7 @@ public class DtoGenerator extends BaseGenerator {
         // Handle $ref
         if (schema.get$ref() != null) {
             String schemaName = extractSchemaName(schema.get$ref());
-            return ClassName.bestGuess(schemaName);
+            return ClassName.bestGuess(toClassName(schemaName));
         }
         
         // Handle arrays
@@ -371,7 +373,7 @@ public class DtoGenerator extends BaseGenerator {
         return ClassName.get(Object.class);
     }
     
-    private String generatePolymorphicDto(DetectedPackages packages, OpenAPI spec,
+    private String generatePolymorphicDto(CodegenConfig config, DetectedPackages packages, OpenAPI spec,
                                         ComposedSchema schema, String className,
                                         String packageName, Set<String> processedSchemas) {
         // For now, generate a simple class that extends/implements the composed schemas
@@ -383,8 +385,16 @@ public class DtoGenerator extends BaseGenerator {
         
         // Process anyOf/oneOf as a union type (simplified for now)
         List<Schema<?>> schemas = new ArrayList<>();
-        if (schema.getAnyOf() != null) schemas.addAll((java.util.List<Schema<?>>) schema.getAnyOf());
-        if (schema.getOneOf() != null) schemas.addAll((java.util.List<Schema<?>>) schema.getOneOf());
+        if (schema.getAnyOf() != null) {
+            for (Object schemaObj : schema.getAnyOf()) {
+                schemas.add((Schema<?>) schemaObj);
+            }
+        }
+        if (schema.getOneOf() != null) {
+            for (Object schemaObj : schema.getOneOf()) {
+                schemas.add((Schema<?>) schemaObj);
+            }
+        }
         
         // Add a field for each possible type
         for (int i = 0; i < schemas.size(); i++) {
@@ -403,7 +413,7 @@ public class DtoGenerator extends BaseGenerator {
         }
         
         TypeSpec typeSpec = classBuilder.build();
-        return writeJavaFile(packageName, typeSpec, getOutputDir());
+        return writeJavaFile(packageName, typeSpec, getOutputDir(), config.isDryRun());
     }
     
     private String deriveClassName(Schema<?> schema, String defaultName) {

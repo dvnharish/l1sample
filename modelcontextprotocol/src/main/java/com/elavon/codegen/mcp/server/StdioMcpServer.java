@@ -335,8 +335,12 @@ public class StdioMcpServer implements CommandLineRunner {
     }
     
     private void sendResponse(ObjectNode response) {
-        stdout.println(objectMapper.writeValueAsString(response));
-        stdout.flush();
+        try {
+            stdout.println(objectMapper.writeValueAsString(response));
+            stdout.flush();
+        } catch (Exception e) {
+            log.error("Failed to serialize MCP response", e);
+        }
     }
     
     private void sendErrorResponse(String message) {

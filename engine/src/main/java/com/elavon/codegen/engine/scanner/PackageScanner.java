@@ -79,7 +79,7 @@ public class PackageScanner {
         
         // Parse files and collect package information
         Map<String, PackageInfo> packageInfoMap = new ConcurrentHashMap<>();
-        String springBootAppPackage = null;
+        final String[] springBootAppPackageRef = {null};
         
         for (File javaFile : javaFiles) {
             try {
@@ -109,7 +109,7 @@ public class PackageScanner {
                             }
                             
                             if (SPRING_BOOT_APP_ANNOTATIONS.contains(annotationName)) {
-                                springBootAppPackage = packageName;
+                                springBootAppPackageRef[0] = packageName;
                                 log.info("Found @SpringBootApplication in package: {}", packageName);
                             }
                         }
@@ -121,7 +121,7 @@ public class PackageScanner {
         }
         
         // Determine base package
-        String basePackage = determineBasePackage(packageInfoMap, springBootAppPackage);
+        String basePackage = determineBasePackage(packageInfoMap, springBootAppPackageRef[0]);
         
         // Detect sub-packages
         return detectSubPackages(packageInfoMap, basePackage);
