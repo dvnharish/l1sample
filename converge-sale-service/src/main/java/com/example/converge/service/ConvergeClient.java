@@ -36,6 +36,7 @@ public class ConvergeClient {
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 300), include = {RestClientException.class})
     public ConvergeSaleXmlResponse sale(ConvergeSaleXmlRequest xmlReq) {
         String xml = marshal(xmlReq);
+        System.out.println("Sending XML request: " + xml);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -45,6 +46,8 @@ public class ConvergeClient {
 
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(form, headers);
         ResponseEntity<String> resp = restTemplate.postForEntity(properties.getBaseUrl(), entity, String.class);
+        
+        System.out.println("Received XML response: " + resp.getBody());
         return unmarshal(resp.getBody());
     }
 

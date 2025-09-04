@@ -13,6 +13,7 @@ public class ConvergeMapper {
         xml.setMerchantId(props.getSslMerchantId());
         xml.setUserId(props.getSslUserId());
         xml.setPin(props.getSslPin());
+        xml.setVendorId(props.getSslVendorId());
         xml.setAmount(req.getAmount());
         xml.setCardNumber(req.getCardNumber());
         xml.setExpDateMmYy(buildExpDate(req.getExpMonth(), req.getExpYear()));
@@ -20,23 +21,42 @@ public class ConvergeMapper {
         xml.setInvoiceNumber(req.getInvoiceNumber());
         xml.setAvsAddress(req.getAddress());
         xml.setAvsZip(req.getPostalCode());
-        xml.setCardholderName(req.getCardHolderName());
-        xml.setTransactionCurrency(req.getCurrency());
+        
+        // Parse cardholder name into first and last name
+        if (req.getCardHolderName() != null && !req.getCardHolderName().trim().isEmpty()) {
+            String[] nameParts = req.getCardHolderName().trim().split("\\s+", 2);
+            xml.setFirstName(nameParts[0]);
+            if (nameParts.length > 1) {
+                xml.setLastName(nameParts[1]);
+            }
+        }
+        
         return xml;
     }
 
     public static SaleResponse toSaleResponse(ConvergeSaleXmlResponse xml) {
         SaleResponse res = new SaleResponse();
+        
+        // Map approval status - "0" means approved in Converge
         boolean approved = "0".equalsIgnoreCase(xml.getResult());
         res.setApproved(approved);
+        
+        // Map transaction details
         res.setAuthCode(xml.getApprovalCode());
         res.setTransactionId(xml.getTransactionId());
-        res.setAvsResult(xml.getAvsResponse());
-        res.setCvvResult(xml.getCvv2Response());
+        
+        // Map verification results - these fields are not in the actual response
+        res.setAvsResult(null);
+        res.setCvvResult(null);
+        
+        // Map response messages
         res.setMessage(xml.getResultMessage());
-        res.setRawCode(xml.getIssuerResponse());
-        res.setRawText(xml.getResultMessage());
+        res.setRawCode(xml.getResult()); // The result code
+        res.setRawText(xml.getResultMessage()); // The result message as raw text
+        
+        // Map timestamp
         res.setTimestamp(xml.getTxnTime());
+        
         return res;
     }
 
