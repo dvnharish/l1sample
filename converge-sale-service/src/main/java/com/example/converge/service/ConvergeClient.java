@@ -35,20 +35,30 @@ public class ConvergeClient {
 
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 300), include = {RestClientException.class})
     public ConvergeSaleXmlResponse sale(ConvergeSaleXmlRequest xmlReq) {
-        String xml = marshal(xmlReq);
-        System.out.println("Sending XML request: " + xml);
+        try {
+            String xml = marshal(xmlReq);
+            System.out.println("Sending XML request: " + xml);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-        form.add("xmldata", xml);
+            MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+            form.add("xmldata", xml);
 
-        HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(form, headers);
-        ResponseEntity<String> resp = restTemplate.postForEntity(properties.getBaseUrl(), entity, String.class);
-        
-        System.out.println("Received XML response: " + resp.getBody());
-        return unmarshal(resp.getBody());
+            HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(form, headers);
+            ResponseEntity<String> resp = restTemplate.postForEntity(properties.getBaseUrl(), entity, String.class);
+            
+            System.out.println("Received XML response: " + resp.getBody());
+            return unmarshal(resp.getBody());
+        } catch (Exception e) {
+            System.err.println("Error in ConvergeClient.sale: " + e.getMessage());
+            e.printStackTrace();
+            // Return a response indicating failure
+            ConvergeSaleXmlResponse errorResponse = new ConvergeSaleXmlResponse();
+            errorResponse.setResult("1"); // Error code
+            errorResponse.setResultMessage("Error: " + e.getMessage());
+            return errorResponse;
+        }
     }
 
     private String marshal(ConvergeSaleXmlRequest request) {
@@ -57,7 +67,7 @@ public class ConvergeClient {
             Marshaller marshaller = context.createMarshaller();
             marshaller.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
             StringWriter writer = new StringWriter();
-            writer.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+            // Don't add XML declaration - Converge doesn't want it
             marshaller.marshal(request, writer);
             return writer.toString();
         } catch (JAXBException e) {

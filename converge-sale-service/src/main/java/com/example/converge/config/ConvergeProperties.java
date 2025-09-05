@@ -8,7 +8,6 @@ public class ConvergeProperties {
     private String sslMerchantId;
     private String sslUserId;
     private String sslPin;
-    private String sslVendorId;
     private int timeoutMs = 10000;
 
     public String getBaseUrl() { return baseUrl; }
@@ -19,8 +18,6 @@ public class ConvergeProperties {
     public void setSslUserId(String sslUserId) { this.sslUserId = sslUserId; }
     public String getSslPin() { return sslPin; }
     public void setSslPin(String sslPin) { this.sslPin = sslPin; }
-    public String getSslVendorId() { return sslVendorId; }
-    public void setSslVendorId(String sslVendorId) { this.sslVendorId = sslVendorId; }
     public int getTimeoutMs() { return timeoutMs; }
     public void setTimeoutMs(int timeoutMs) { this.timeoutMs = timeoutMs; }
 }
